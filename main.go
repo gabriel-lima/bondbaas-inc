@@ -1,17 +1,18 @@
 package main
 
 import (
-	"net/http"
+	"bondbaas/storage"
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	_ "github.com/lib/pq"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
+	"reflect"
 	"strconv"
 	"strings"
-	"fmt"
-	"os"
-	"database/sql"
-	"reflect"
-	"encoding/json"
-	"io/ioutil"
-	_ "github.com/lib/pq"
 )
 
 var db *sql.DB
@@ -19,7 +20,7 @@ var db *sql.DB
 func main() {
 	initDB()
 	defer db.Close()
-	
+
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/admin/tables", adminTablesHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
@@ -29,10 +30,10 @@ func initDB() {
 	var err error
 	dataSourceName := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"), 
-		os.Getenv("DB_PORT"), 
-		os.Getenv("DB_USER"), 
-		os.Getenv("DB_PASSWORD"), 
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_PORT"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
 		os.Getenv("DB_DATABASE"))
 	db, err = sql.Open("postgres", dataSourceName)
 	if err != nil {
@@ -46,10 +47,9 @@ func initDB() {
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
-	var sqlStatement string
 	var table string
 	var id int
-	
+
 	uri := deleteEmptyStrings(strings.Split(r.URL.Path, "/"))
 
 	if len(uri) == 0 {
@@ -88,38 +88,34 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	gateway := storage.TableGateway{DB: db, Table: table}
+
 	if r.Method == "GET" {
 		if id == 0 {
-			var js []byte
-			sqlStatement = fmt.Sprintf(`
-				SELECT * 
-				FROM %s`, table)
-			js, err = queryToJson(db, sqlStatement)
+			var data []byte
+			data, err = gateway.GetAll()
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				log.Println(err)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(js)
+			w.Write(data)
 			return
 		} else {
-			var js []byte
-			sqlStatement = fmt.Sprintf(`
-				SELECT * 
-				FROM %s 
-				WHERE id = $1`, table)
-			js, err = queryToJson(db, sqlStatement, id)
+			var data []byte
+			data, err = gateway.GetByID(id)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				log.Println(err)
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			w.Write(js)
+			w.Write(data)
 			return
 		}
 	}
+
 	if r.Method == "POST" {
 		var js map[string]interface{}
 		var body []byte
@@ -135,25 +131,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-		delete(js, "id")
 
-		var placeHolderNumber int
-		var placeHolders string
-		valuesFromJs := make([]interface{}, 0, len(js))
-		var fieldsFromJs string
-		for field, value := range js {
-			fieldsFromJs += ", " + field
+		err = gateway.Create(js)
 
-			valuesFromJs = append(valuesFromJs, value)
-			placeHolderNumber++
-			placeHolders += ", $" + strconv.Itoa(placeHolderNumber)
-		}
-
-		sqlStatement = fmt.Sprintf(`
-			INSERT INTO %s 
-			(id%s) 
-			VALUES (DEFAULT%s)`, table, fieldsFromJs, placeHolders)
-		_, err = db.Exec(sqlStatement, valuesFromJs...)
 		if err != nil {
 			http.Error(w, err.Error(), 422)
 			log.Println(err)
@@ -163,6 +143,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	if r.Method == "PUT" {
 		var js map[string]interface{}
 		var body []byte
@@ -178,45 +159,24 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println(err)
 			return
 		}
-		
-		params := make([]interface{}, 0, len(js))
-		params = append(params, js["id"])
-		delete(js, "id")
 
-		placeHolderCounter := 1
-		var setValues string
+		err = gateway.Update(id, js)
 
-		for field, value := range js {
-			params = append(params, value)
-			if placeHolderCounter > 1 {
-				setValues += ", "
-			}
-			placeHolderCounter++
-			setValues += field + " = $" + strconv.Itoa(placeHolderCounter)
-		}
-
-		sqlStatement = fmt.Sprintf(`
-			UPDATE %s 
-			SET %s
-			WHERE id = $1`, table, setValues)
-		
-		_, err = db.Exec(sqlStatement, params...)
 		if err != nil {
 			http.Error(w, err.Error(), 422)
 			log.Println(err)
 			return
 		}
 	}
+
 	if r.Method == "DELETE" {
 		if id == 0 {
 			http.Error(w, "Id must to be an integer", 422)
 			return
 		}
 
-		sqlStatement = fmt.Sprintf(`
-			DELETE FROM %s 
-			WHERE id = $1`, table)
-		_, err = db.Exec(sqlStatement, id)
+		err = gateway.Delete(id)
+
 		if err != nil {
 			http.Error(w, err.Error(), 422)
 			log.Println(err)
@@ -227,12 +187,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 /// JSON schema
 type Table struct {
-	Name string `json:name`
+	Name    string    `json:name`
 	Columns []Columns `json:columns`
 }
 type Columns struct {
-	Name string `json:name`
-	Type string `json:type`
+	Name       string `json:name`
+	Type       string `json:type`
 	Constraint string `json:constraint`
 }
 
