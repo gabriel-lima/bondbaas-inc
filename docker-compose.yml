@@ -13,7 +13,7 @@ services:
   app:
     build: .
     volumes:
-      - .:/go/src/app
+      - .:/go/src/bondbaas
     command: fresh
     command: ["./wait-for-it.sh", "db:5432", "--", "fresh"]
     ports:
@@ -24,5 +24,6 @@ services:
       - DB_DATABASE=bondbaas-db
       - DB_USER=bondbaas
       - DB_PASSWORD=bondbaas
+      - APP_PORT=3000
     depends_on:
       - db

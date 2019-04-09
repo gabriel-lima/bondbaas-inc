@@ -4,7 +4,7 @@ RUN apk add --update --no-cache git bash && \
   rm -rf /tmp/* /var/cache/apk/*
 
 ADD . /go/src/bondbaas
-WORKDIR /go/src/app
+WORKDIR /go/src/bondbaas
 
 RUN go get github.com/lib/pq
 RUN go get github.com/pilu/fresh
