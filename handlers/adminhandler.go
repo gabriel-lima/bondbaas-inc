@@ -8,6 +8,7 @@ import (
 type AdminHandler struct {
 	Response     http.ResponseWriter
 	AdminGateway storage.AdminGateway
+	Request      *http.Request
 }
 
 func (h *AdminHandler) Get() {
@@ -20,8 +21,14 @@ func (h *AdminHandler) Get() {
 	}
 }
 
-func (h *AdminHandler) Create(payload storage.Table) {
-	err := h.AdminGateway.Create(payload)
+func (h *AdminHandler) Create() {
+	payload, err := getPayloadSchema(h.Request)
+	if err != nil {
+		fail(h.Response, 422, err.Error())
+		return
+	}
+
+	err = h.AdminGateway.Create(payload)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())

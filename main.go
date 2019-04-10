@@ -4,7 +4,6 @@ import (
 	"bondbaas/handlers"
 	"bondbaas/storage"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
@@ -125,22 +124,18 @@ POST
 */
 func adminHandler(w http.ResponseWriter, r *http.Request) {
 	gateway := storage.AdminGateway{DB: db}
-	handler := handlers.AdminHandler{Response: w, AdminGateway: gateway}
+	handler := handlers.AdminHandler{
+		Request:      r,
+		Response:     w,
+		AdminGateway: gateway,
+	}
 
 	if r.Method == "GET" {
 		handler.Get()
 	}
 
 	if r.Method == "POST" {
-		table := storage.Table{}
-		err := json.NewDecoder(r.Body).Decode(&table)
-
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-
-		handler.Create(table)
+		handler.Create()
 	}
 }
 
