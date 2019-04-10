@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -33,10 +32,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var err error
 	gateway := storage.TableGateway{DB: db, Table: table}
-
 	handler := handlers.TableHandler{
+		Request:      r,
 		Response:     w,
 		TableGateway: gateway,
 	}
@@ -46,45 +44,14 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		var js map[string]interface{}
-		var body []byte
-		body, err = ioutil.ReadAll(r.Body)
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-		err = json.Unmarshal([]byte(body), &js)
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-
-		handler.Create(js)
+		handler.Create()
 	}
 
 	if r.Method == "PUT" {
-		var js map[string]interface{}
-		var body []byte
-		body, err = ioutil.ReadAll(r.Body)
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-		err = json.Unmarshal([]byte(body), &js)
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-
-		handler.Update(id, js)
+		handler.Update(id)
 	}
 
 	if r.Method == "DELETE" {
-		if id == 0 {
-			http.Error(w, "Id must to be an integer", 422)
-			return
-		}
-
 		handler.Delete(id)
 	}
 }
