@@ -26,46 +26,13 @@ func main() {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	table, id := extractPath(r.URL.Path)
+
+	if tableNameIsEmpty(table, w) || tableNameIsAReservedWord(table, w) || tableNameNotFound(table, w) {
+		return
+	}
+
 	var err error
-	var table string
-	var id int
-
-	uri := deleteEmptyStrings(strings.Split(r.URL.Path, "/"))
-
-	if len(uri) == 0 {
-		http.Error(w, "Root is not a valid route.", 404)
-		return
-	}
-
-	table = strings.ToLower(uri[0])
-	if table == "admin" {
-		http.Error(w, "Admin is a reserved name.", 422)
-		return
-	}
-	var exists bool
-	err = db.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1 
-			FROM information_schema.tables 
-			WHERE table_name = $1
-		)`, table).Scan(&exists)
-	if err != nil {
-		responseInternalError(w, err)
-		return
-	}
-	if !exists {
-		http.Error(w, "Table not found.", 404)
-		return
-	}
-
-	if len(uri) == 2 {
-		id, err = strconv.Atoi(uri[1])
-		if err != nil {
-			responseMalformed(w, err)
-			return
-		}
-	}
-
 	gateway := storage.TableGateway{DB: db, Table: table}
 
 	if r.Method == "GET" {
@@ -144,6 +111,58 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func extractPath(path string) (tableName string, ID int) {
+	paths := strings.Split(path, "/")
+	deleteEmptyPaths(paths)
+
+	tableName = strings.ToLower(strings.Join(paths[1:], ""))
+	ID, _ = strconv.Atoi(strings.Join(paths[2:], ""))
+
+	return tableName, ID
+}
+
+func deleteEmptyPaths(s []string) {
+	var r []string
+	for _, str := range s {
+		if str != "" {
+			r = append(r, str)
+		}
+	}
+}
+
+func tableNameIsEmpty(tableName string, w http.ResponseWriter) bool {
+	if tableName == "" {
+		http.Error(w, "Please inform a table", 404)
+		return true
+	}
+	return false
+}
+
+func tableNameIsAReservedWord(tableName string, w http.ResponseWriter) bool {
+	if tableName == "admin" {
+		http.Error(w, "admin is a reserved name.", 422)
+		return true
+	}
+	return false
+}
+
+func tableNameNotFound(tableName string, w http.ResponseWriter) bool {
+	gateway := storage.AdminGateway{DB: db}
+
+	hasTable, err := gateway.HasTable(tableName)
+	if err != nil {
+		responseInternalError(w, err)
+		return true
+	}
+
+	if !hasTable {
+		http.Error(w, fmt.Sprintf("Table %s not found.", tableName), 404)
+		return true
+	}
+
+	return false
+}
+
 /// Create a table schema
 /*
 POST
@@ -208,14 +227,4 @@ func responseMalformed(w http.ResponseWriter, err error) {
 func responseInternalError(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), 500)
 	log.Println(err)
-}
-
-func deleteEmptyStrings(s []string) []string {
-	var r []string
-	for _, str := range s {
-		if str != "" {
-			r = append(r, str)
-		}
-	}
-	return r
 }

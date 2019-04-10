@@ -30,6 +30,12 @@ func (g *AdminGateway) Create(table Table) (err error) {
 	return err
 }
 
+func (g *AdminGateway) HasTable(tableName string) (hasTable bool, err error) {
+	err = g.DB.QueryRow(`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)`, tableName).Scan(&hasTable)
+
+	return hasTable, err
+}
+
 func generateColumnsSchema(columns []Column) (columnsSchema string) {
 	for _, c := range columns {
 		// ID field is always create in a table, so avoiding duplicated field
