@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bondbaas/handlers"
 	"bondbaas/storage"
 	"database/sql"
 	"encoding/json"
@@ -35,22 +36,13 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	var err error
 	gateway := storage.TableGateway{DB: db, Table: table}
 
+	handler := handlers.TableHandler{
+		Response:     w,
+		TableGateway: gateway,
+	}
+
 	if r.Method == "GET" {
-		if id == 0 {
-			data, err := gateway.GetAll()
-			if err != nil {
-				responseMalformed(w, err)
-			} else {
-				responseOK(w, data)
-			}
-		} else {
-			data, err := gateway.GetByID(id)
-			if err != nil {
-				responseMalformed(w, err)
-			} else {
-				responseOK(w, data)
-			}
-		}
+		handler.Get(id)
 	}
 
 	if r.Method == "POST" {
@@ -67,13 +59,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = gateway.Create(js)
-
-		if err != nil {
-			responseMalformed(w, err)
-		} else {
-			responseCreated(w)
-		}
+		handler.Create(js)
 	}
 
 	if r.Method == "PUT" {
@@ -90,11 +76,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = gateway.Update(id, js)
-
-		if err != nil {
-			responseMalformed(w, err)
-		}
+		handler.Update(id, js)
 	}
 
 	if r.Method == "DELETE" {
@@ -103,11 +85,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = gateway.Delete(id)
-
-		if err != nil {
-			responseMalformed(w, err)
-		}
+		handler.Delete(id)
 	}
 }
 
@@ -180,15 +158,10 @@ POST
 */
 func adminTablesHandler(w http.ResponseWriter, r *http.Request) {
 	gateway := storage.AdminGateway{DB: db}
+	handler := handlers.AdminHandler{Response: w, AdminGateway: gateway}
 
 	if r.Method == "GET" {
-		data, err := gateway.GetAll()
-
-		if err != nil {
-			responseInternalError(w, err)
-		} else {
-			responseOK(w, data)
-		}
+		handler.Get()
 	}
 
 	if r.Method == "POST" {
@@ -200,13 +173,7 @@ func adminTablesHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = gateway.Create(table)
-
-		if err != nil {
-			responseMalformed(w, err)
-		} else {
-			responseCreated(w)
-		}
+		handler.Create(table)
 	}
 }
 
