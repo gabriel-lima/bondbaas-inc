@@ -177,15 +177,6 @@ func adminTablesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func responseOK(w http.ResponseWriter, data []byte) {
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
-}
-
-func responseCreated(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusCreated)
-}
-
 func responseMalformed(w http.ResponseWriter, err error) {
 	http.Error(w, err.Error(), 422)
 	log.Println(err)
