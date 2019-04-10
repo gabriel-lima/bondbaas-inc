@@ -29,4 +29,3 @@ func InitDB() (DB *sql.DB) {
 
 	return DB
 }
-

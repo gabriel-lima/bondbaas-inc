@@ -16,7 +16,7 @@ type Middleware struct {
 
 func (m *Middleware) Route() (string, int, bool) {
 	tableName, ID := split(m.Request.URL.Path)
-	
+
 	if m.tableNameIsEmpty(tableName) ||
 		m.tableNameIsAReservedWord(tableName) ||
 		m.tableNameNotFound(tableName) {

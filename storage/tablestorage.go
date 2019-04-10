@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
-	"log"
 )
 
 type TableGateway struct {
@@ -41,17 +40,11 @@ func (s *TableGateway) Create(fieldsAndValues map[string]interface{}) (err error
 	return err
 }
 
-func (s *TableGateway) Update(ID int, fieldsAndValues map[string]interface{}) (err error) {
-	removeIDField(fieldsAndValues)
-	values := extractValuesToUpdateSQL(ID, fieldsAndValues)
-	placeHolders := generatePlaceHoldersToUpdateSQL(fieldsAndValues)
+func (s *TableGateway) Update(ID int, payload map[string]interface{}) (err error) {
+	query := GenerateUpdateQuery(s.Table, payload)
+	values := GenerateUpdateValues(ID, payload)
 
-	log.Println(fmt.Sprintf(`UPDATE %s SET %s WHERE id = $1`, s.Table, placeHolders))
-
-	_, err = s.DB.Exec(
-		fmt.Sprintf(`UPDATE %s SET %s WHERE id = $1`, s.Table, placeHolders),
-		values...,
-	)
+	_, err = s.DB.Exec(query, values...)
 	return err
 }
 
@@ -82,34 +75,11 @@ func extractValuesToInsertSQL(fieldsAndValues map[string]interface{}) []interfac
 	return values
 }
 
-func extractValuesToUpdateSQL(ID int, fieldsAndValues map[string]interface{}) []interface{} {
-	values := make([]interface{}, 0, len(fieldsAndValues))
-	values = append(values, ID)
-	for _, v := range fieldsAndValues {
-		values = append(values, v)
-	}
-	return values
-}
-
 func generatePlaceHoldersToInsertSQL(fieldsAndValues map[string]interface{}) (placeHolders string) {
 	placeHolderCounter := 1
 
 	for range fieldsAndValues {
 		placeHolders += ", $" + strconv.Itoa(placeHolderCounter)
-		placeHolderCounter++
-	}
-	return placeHolders
-}
-
-func generatePlaceHoldersToUpdateSQL(fieldsAndValues map[string]interface{}) (placeHolders string) {
-	placeHolderCounter := 2
-
-	for field, _ := range fieldsAndValues {
-		if placeHolderCounter > 1 {
-			placeHolders += ", "
-		}
-
-		placeHolders += field + " = $" + strconv.Itoa(placeHolderCounter)
 		placeHolderCounter++
 	}
 	return placeHolders

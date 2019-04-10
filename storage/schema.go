@@ -1,7 +1,7 @@
 package storage
 
 type Table struct {
-	Name    string    `json:name`
+	Name    string   `json:name`
 	Columns []Column `json:columns`
 }
 type Column struct {
