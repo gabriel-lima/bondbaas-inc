@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"log"
 )
 
 type TableGateway struct {
@@ -44,6 +45,8 @@ func (s *TableGateway) Update(ID int, fieldsAndValues map[string]interface{}) (e
 	removeIDField(fieldsAndValues)
 	values := extractValuesToUpdateSQL(ID, fieldsAndValues)
 	placeHolders := generatePlaceHoldersToUpdateSQL(fieldsAndValues)
+
+	log.Println(fmt.Sprintf(`UPDATE %s SET %s WHERE id = $1`, s.Table, placeHolders))
 
 	_, err = s.DB.Exec(
 		fmt.Sprintf(`UPDATE %s SET %s WHERE id = $1`, s.Table, placeHolders),
