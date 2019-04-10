@@ -20,12 +20,12 @@ func main() {
 	db = storage.InitDB()
 	defer db.Close()
 
-	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/admin/tables", adminTablesHandler)
+	http.HandleFunc("/", tableHandler)
+	http.HandleFunc("/admin/tables", adminHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
 }
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
+func tableHandler(w http.ResponseWriter, r *http.Request) {
 	table, id := extractPath(r.URL.Path)
 
 	if tableNameIsEmpty(table, w) || tableNameIsAReservedWord(table, w) || tableNameNotFound(table, w) {
@@ -123,7 +123,7 @@ POST
 	]
 }
 */
-func adminTablesHandler(w http.ResponseWriter, r *http.Request) {
+func adminHandler(w http.ResponseWriter, r *http.Request) {
 	gateway := storage.AdminGateway{DB: db}
 	handler := handlers.AdminHandler{Response: w, AdminGateway: gateway}
 
