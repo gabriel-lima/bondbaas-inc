@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 )
@@ -18,31 +17,12 @@ import (
 var db *sql.DB
 
 func main() {
-	initDB()
+	db = storage.InitDB()
 	defer db.Close()
 
 	http.HandleFunc("/", rootHandler)
 	http.HandleFunc("/admin/tables", adminTablesHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
-}
-
-func initDB() {
-	var err error
-	dataSourceName := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_PORT"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_DATABASE"))
-	db, err = sql.Open("postgres", dataSourceName)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	if err = db.Ping(); err != nil {
-		log.Panic(err)
-	}
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,8 +50,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 			WHERE table_name = $1
 		)`, table).Scan(&exists)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
-		log.Println(err)
+		responseInternalError(w, err)
 		return
 	}
 	if !exists {
@@ -82,8 +61,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	if len(uri) == 2 {
 		id, err = strconv.Atoi(uri[1])
 		if err != nil {
-			http.Error(w, "Id must to be an integer", 422)
-			log.Println(err)
+			responseMalformed(w, err)
 			return
 		}
 	}
@@ -92,27 +70,19 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		if id == 0 {
-			var data []byte
-			data, err = gateway.GetAll()
+			data, err := gateway.GetAll()
 			if err != nil {
-				http.Error(w, err.Error(), 500)
-				log.Println(err)
-				return
+				responseMalformed(w, err)
+			} else {
+				responseOK(w, data)
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
-			return
 		} else {
-			var data []byte
-			data, err = gateway.GetByID(id)
+			data, err := gateway.GetByID(id)
 			if err != nil {
-				http.Error(w, err.Error(), 500)
-				log.Println(err)
-				return
+				responseMalformed(w, err)
+			} else {
+				responseOK(w, data)
 			}
-			w.Header().Set("Content-Type", "application/json")
-			w.Write(data)
-			return
 		}
 	}
 
@@ -121,26 +91,21 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		var body []byte
 		body, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
+			responseMalformed(w, err)
 			return
 		}
 		err = json.Unmarshal([]byte(body), &js)
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
+			responseMalformed(w, err)
 			return
 		}
 
 		err = gateway.Create(js)
 
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
-			return
+			responseMalformed(w, err)
 		} else {
-			w.WriteHeader(http.StatusCreated)
-			return
+			responseCreated(w)
 		}
 	}
 
@@ -149,23 +114,19 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		var body []byte
 		body, err = ioutil.ReadAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
+			responseMalformed(w, err)
 			return
 		}
 		err = json.Unmarshal([]byte(body), &js)
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
+			responseMalformed(w, err)
 			return
 		}
 
 		err = gateway.Update(id, js)
 
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
-			return
+			responseMalformed(w, err)
 		}
 	}
 
@@ -178,22 +139,9 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		err = gateway.Delete(id)
 
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
-			return
+			responseMalformed(w, err)
 		}
 	}
-}
-
-/// JSON schema
-type Table struct {
-	Name    string    `json:name`
-	Columns []Columns `json:columns`
-}
-type Columns struct {
-	Name       string `json:name`
-	Type       string `json:type`
-	Constraint string `json:constraint`
 }
 
 /// Create a table schema
@@ -212,59 +160,54 @@ POST
 }
 */
 func adminTablesHandler(w http.ResponseWriter, r *http.Request) {
-	var err error
-	var sqlStatement string
+	gateway := storage.AdminGateway{DB: db}
 
 	if r.Method == "GET" {
-		var js []byte
-		sqlStatement = `
-			SELECT t.table_name, c.column_name, c.data_type, c.is_nullable
-			FROM information_schema.tables as t
-			JOIN information_schema.columns as c ON c.table_name = t.table_name
-			WHERE t.table_schema = 'public'`
-		js, err = queryToJson(db, sqlStatement)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			log.Println(err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(js)
-		return
-	}
-	if r.Method == "POST" {
-		table := Table{}
-		err = json.NewDecoder(r.Body).Decode(&table)
-		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
-			return
-		}
+		data, err := gateway.GetAll()
 
-		var params string
-		for _, column := range table.Columns {
-			// ID field is always create in a table, so avoiding duplicated field
-			if strings.ToLower(column.Name) == "id" {
-				continue
-			}
-			params += fmt.Sprintf(", %s %s %s", column.Name, column.Type, column.Constraint)
-		}
-
-		sqlStatement = fmt.Sprintf(`
-			CREATE TABLE %s (
-				id SERIAL PRIMARY KEY
-				%s
-			)`, table.Name, params)
-		_, err := db.Exec(sqlStatement)
 		if err != nil {
-			http.Error(w, err.Error(), 422)
-			log.Println(err)
-			return
+			responseInternalError(w, err)
 		} else {
-			w.WriteHeader(http.StatusCreated)
-			return
+			responseOK(w, data)
 		}
 	}
+
+	if r.Method == "POST" {
+		table := storage.Table{}
+		err := json.NewDecoder(r.Body).Decode(&table)
+
+		if err != nil {
+			responseMalformed(w, err)
+			return
+		}
+
+		err = gateway.Create(table)
+
+		if err != nil {
+			responseMalformed(w, err)
+		} else {
+			responseCreated(w)
+		}
+	}
+}
+
+func responseOK(w http.ResponseWriter, data []byte) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+func responseCreated(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusCreated)
+}
+
+func responseMalformed(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), 422)
+	log.Println(err)
+}
+
+func responseInternalError(w http.ResponseWriter, err error) {
+	http.Error(w, err.Error(), 500)
+	log.Println(err)
 }
 
 func deleteEmptyStrings(s []string) []string {
@@ -275,42 +218,4 @@ func deleteEmptyStrings(s []string) []string {
 		}
 	}
 	return r
-}
-
-func queryToJson(db *sql.DB, query string, args ...interface{}) ([]byte, error) {
-	// an array of JSON objects
-	// the map key is the field name
-	var objects []map[string]interface{}
-
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	for rows.Next() {
-		// figure out what columns were returned
-		// the column names will be the JSON object field keys
-		columns, err := rows.ColumnTypes()
-		if err != nil {
-			return nil, err
-		}
-
-		// Scan needs an array of pointers to the values it is setting
-		// This creates the object and sets the values correctly
-		values := make([]interface{}, len(columns))
-		object := map[string]interface{}{}
-		for i, column := range columns {
-			object[column.Name()] = reflect.New(column.ScanType()).Interface()
-			values[i] = object[column.Name()]
-		}
-
-		err = rows.Scan(values...)
-		if err != nil {
-			return nil, err
-		}
-
-		objects = append(objects, object)
-	}
-
-	// indent because I want to read the output
-	return json.MarshalIndent(objects, "", "\t")
 }
