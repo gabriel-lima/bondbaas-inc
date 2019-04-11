@@ -5,13 +5,13 @@ import (
 	"net/http"
 )
 
-type TableHandler struct {
+type ResourceHandler struct {
 	Response        http.ResponseWriter
 	ResourceStorage storage.ResourceStorage
 	Request         *http.Request
 }
 
-func (h *TableHandler) Get(ID int) {
+func (h *ResourceHandler) Get(ID int) {
 	if ID > 0 {
 		h.getByID(ID)
 	} else {
@@ -19,7 +19,7 @@ func (h *TableHandler) Get(ID int) {
 	}
 }
 
-func (h *TableHandler) Create() {
+func (h *ResourceHandler) Create() {
 	payload, err := getPayload(h.Request)
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -35,7 +35,7 @@ func (h *TableHandler) Create() {
 	}
 }
 
-func (h *TableHandler) Update(ID int) {
+func (h *ResourceHandler) Update(ID int) {
 	payload, err := getPayload(h.Request)
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -51,7 +51,7 @@ func (h *TableHandler) Update(ID int) {
 	}
 }
 
-func (h *TableHandler) Delete(ID int) {
+func (h *ResourceHandler) Delete(ID int) {
 	if ID == 0 {
 		fail(h.Response, 422, "Id must to be an integer")
 		return
@@ -66,7 +66,7 @@ func (h *TableHandler) Delete(ID int) {
 	}
 }
 
-func (h *TableHandler) getByID(ID int) {
+func (h *ResourceHandler) getByID(ID int) {
 	data, err := h.ResourceStorage.GetByID(ID)
 
 	if err != nil {
@@ -76,7 +76,7 @@ func (h *TableHandler) getByID(ID int) {
 	}
 }
 
-func (h *TableHandler) getAll() {
+func (h *ResourceHandler) getAll() {
 	data, err := h.ResourceStorage.GetAll()
 
 	if err != nil {

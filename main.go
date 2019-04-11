@@ -17,12 +17,12 @@ func main() {
 	db = storage.InitDB()
 	defer db.Close()
 
-	http.HandleFunc("/", tableHandler)
+	http.HandleFunc("/", tableHaResource)
 	http.HandleFunc("/admin/tables", adminHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
 }
 
-func tableHandler(w http.ResponseWriter, r *http.Request) {
+func tableHaResource(w http.ResponseWriter, r *http.Request) {
 	adminStorage := storage.AdminStorage{DB: db}
 	middleware := handlers.Middleware{
 		Request:      r,
@@ -38,7 +38,7 @@ func tableHandler(w http.ResponseWriter, r *http.Request) {
 		DB:    db,
 		Table: tableName,
 	}
-	handler := handlers.TableHandler{
+	handler := handlers.ResourceHandler{
 		Request:         r,
 		Response:        w,
 		ResourceStorage: ResourceStorage,
