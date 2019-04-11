@@ -20,7 +20,7 @@ func main() {
 	rh := handler.ResourceHandler{DB: db}
 	ah := handler.AdminHandler{DB: db}
 
-	http.HandleFunc("/", rh.ResourceHandle)
-	http.HandleFunc("/admin/tables", ah.AdminHandle)
+	http.HandleFunc("/", rh.Handle)
+	http.HandleFunc("/admin/tables", ah.Handle)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
 }

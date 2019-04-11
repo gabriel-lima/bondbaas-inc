@@ -12,7 +12,7 @@ type AdminHandler struct {
 	DB *sql.DB
 }
 
-func (h *AdminHandler) AdminHandle(w http.ResponseWriter, r *http.Request) {
+func (h *AdminHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	service := h.adminServiceFactory(w)
 
 	switch r.Method {

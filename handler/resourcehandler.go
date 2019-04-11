@@ -13,7 +13,7 @@ type ResourceHandler struct {
 	DB *sql.DB
 }
 
-func (h *ResourceHandler) ResourceHandle(w http.ResponseWriter, r *http.Request) {
+func (h *ResourceHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	resourceRouter := h.resourceRouterFactory(w)
 
 	tableName, ID, invalidRoute := resourceRouter.Route(r.URL.Path)
