@@ -4,8 +4,6 @@ import (
 	"bondbaas/presenter"
 	"bondbaas/storage"
 	"fmt"
-	"strconv"
-	"strings"
 )
 
 type ResourceRouter struct {
@@ -14,7 +12,7 @@ type ResourceRouter struct {
 }
 
 func (r *ResourceRouter) Route(path string) (string, int, bool) {
-	tableName, ID := split(path)
+	tableName, ID := SplitPath(path)
 
 	if r.tableNameIsEmpty(tableName) ||
 		r.tableNameIsAReservedWord(tableName) ||
@@ -23,27 +21,6 @@ func (r *ResourceRouter) Route(path string) (string, int, bool) {
 	}
 
 	return tableName, ID, false
-}
-
-func split(path string) (tableName string, ID int) {
-	paths := strings.Split(path, "/")
-
-	paths = removeEmptySpace(paths)
-
-	tableName = strings.ToLower(strings.Join(paths[0:1], ""))
-
-	ID, _ = strconv.Atoi(strings.Join(paths[1:], ""))
-
-	return tableName, ID
-}
-
-func removeEmptySpace(paths []string) (newPaths []string) {
-	for _, path := range paths {
-		if path != "" {
-			newPaths = append(newPaths, path)
-		}
-	}
-	return newPaths
 }
 
 func (r *ResourceRouter) tableNameIsEmpty(tableName string) bool {
