@@ -38,7 +38,7 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 		DB:    db,
 		Table: tableName,
 	}
-	handler := handlers.ResourceHandler{
+	handler := handlers.ResourceService{
 		Request:         r,
 		Response:        w,
 		ResourceStorage: ResourceStorage,

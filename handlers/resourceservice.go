@@ -5,13 +5,13 @@ import (
 	"net/http"
 )
 
-type ResourceHandler struct {
+type ResourceService struct {
 	Response        http.ResponseWriter
 	ResourceStorage storage.ResourceStorage
 	Request         *http.Request
 }
 
-func (h *ResourceHandler) Get(ID int) {
+func (h *ResourceService) Get(ID int) {
 	if ID > 0 {
 		h.getByID(ID)
 	} else {
@@ -19,7 +19,7 @@ func (h *ResourceHandler) Get(ID int) {
 	}
 }
 
-func (h *ResourceHandler) Create() {
+func (h *ResourceService) Create() {
 	payload, err := getPayload(h.Request)
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -35,7 +35,7 @@ func (h *ResourceHandler) Create() {
 	}
 }
 
-func (h *ResourceHandler) Update(ID int) {
+func (h *ResourceService) Update(ID int) {
 	payload, err := getPayload(h.Request)
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -51,7 +51,7 @@ func (h *ResourceHandler) Update(ID int) {
 	}
 }
 
-func (h *ResourceHandler) Delete(ID int) {
+func (h *ResourceService) Delete(ID int) {
 	if ID == 0 {
 		fail(h.Response, 422, "Id must to be an integer")
 		return
@@ -66,7 +66,7 @@ func (h *ResourceHandler) Delete(ID int) {
 	}
 }
 
-func (h *ResourceHandler) getByID(ID int) {
+func (h *ResourceService) getByID(ID int) {
 	data, err := h.ResourceStorage.GetByID(ID)
 
 	if err != nil {
@@ -76,7 +76,7 @@ func (h *ResourceHandler) getByID(ID int) {
 	}
 }
 
-func (h *ResourceHandler) getAll() {
+func (h *ResourceService) getAll() {
 	data, err := h.ResourceStorage.GetAll()
 
 	if err != nil {
