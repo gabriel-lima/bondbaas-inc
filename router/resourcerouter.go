@@ -14,16 +14,16 @@ type ResourceRouter struct {
 func (r *ResourceRouter) Route(path string) (string, int, bool) {
 	tableName, ID := SplitPath(path)
 
-	if r.tableNameIsEmpty(tableName) ||
-		r.tableNameIsAReservedWord(tableName) ||
-		r.tableNameNotFound(tableName) {
+	if r.resourceIsEmpty(tableName) ||
+		r.resourceIsAReservedWord(tableName) ||
+		r.resourceNotFound(tableName) {
 		return "", 0, true
 	}
 
 	return tableName, ID, false
 }
 
-func (r *ResourceRouter) tableNameIsEmpty(tableName string) bool {
+func (r *ResourceRouter) resourceIsEmpty(tableName string) bool {
 	if tableName == "" {
 		r.ResourcePresenter.Fail(404, "Please inform a table name")
 		return true
@@ -31,7 +31,7 @@ func (r *ResourceRouter) tableNameIsEmpty(tableName string) bool {
 	return false
 }
 
-func (r *ResourceRouter) tableNameIsAReservedWord(tableName string) bool {
+func (r *ResourceRouter) resourceIsAReservedWord(tableName string) bool {
 	if tableName == "admin" {
 		r.ResourcePresenter.Fail(422, "admin is a reserved name.")
 		return true
@@ -39,7 +39,7 @@ func (r *ResourceRouter) tableNameIsAReservedWord(tableName string) bool {
 	return false
 }
 
-func (r *ResourceRouter) tableNameNotFound(tableName string) bool {
+func (r *ResourceRouter) resourceNotFound(tableName string) bool {
 	hasTable, err := r.AdminStorage.HasTable(tableName)
 	if err != nil {
 		r.ResourcePresenter.Fail(500, err.Error())
