@@ -2,17 +2,17 @@ package main
 
 import (
 	"bondbaas/handlers"
-	"bondbaas/storage"
-	"bondbaas/service"
 	"bondbaas/presenter"
+	"bondbaas/service"
+	"bondbaas/storage"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	_ "github.com/lib/pq"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"encoding/json"
-	"io/ioutil"
 )
 
 var db *sql.DB
@@ -51,11 +51,11 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 		DB:        db,
 		TableName: tableName,
 	}
-	resourcePresenter := presenter.ResourcePresenter {
+	resourcePresenter := presenter.ResourcePresenter{
 		Response: w,
 	}
 	handler := service.ResourceService{
-		ResourceStorage: resourceStorage,
+		ResourceStorage:   resourceStorage,
 		ResourcePresenter: resourcePresenter,
 	}
 

@@ -1,12 +1,12 @@
 package service
 
 import (
-	"bondbaas/storage"
 	"bondbaas/presenter"
+	"bondbaas/storage"
 )
 
 type ResourceService struct {
-	ResourceStorage storage.ResourceStorage
+	ResourceStorage   storage.ResourceStorage
 	ResourcePresenter presenter.ResourcePresenter
 }
 
