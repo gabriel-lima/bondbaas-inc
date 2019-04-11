@@ -27,23 +27,23 @@ func (h *ResourceHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		service.Get(ID)
 	case http.MethodPost:
-		payload, err := getPayload(r)
+		payload, err := SerializePayload(service.ResourcePresenter, r.Body)
 		if err != nil {
-			// s.ResourcePresenter.Fail(422, err.Error())
 			return
 		}
+
 		service.Create(payload)
 	case http.MethodPut:
-		payload, err := getPayload(r)
+		payload, err := SerializePayload(service.ResourcePresenter, r.Body)
 		if err != nil {
-			// s.ResourcePresenter.Fail(422, err.Error())
 			return
 		}
+
 		service.Update(ID, payload)
 	case http.MethodDelete:
 		service.Delete(ID)
 	default:
-		// TODO: define a message error
+		service.ResourcePresenter.Fail(422, "Undefined HTTP Method")
 	}
 }
 

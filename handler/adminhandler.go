@@ -19,14 +19,14 @@ func (h *AdminHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		service.Get()
 	case http.MethodPost:
-		payload, err := getPayloadSchema(r)
+		payload, err := SerializeTableModel(service.AdminPresenter, r.Body)
 		if err != nil {
-			// fail(h.Response, 422, err.Error())
 			return
 		}
+
 		service.Create(payload)
 	default:
-		// TODO: define a message error
+		service.AdminPresenter.Fail(422, "Undefined HTTP Method")
 	}
 }
 
