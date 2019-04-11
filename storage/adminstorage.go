@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-type AdminGateway struct {
+type AdminStorage struct {
 	DB *sql.DB
 }
 
-func (g *AdminGateway) GetAll() ([]byte, error) {
+func (g *AdminStorage) GetAll() ([]byte, error) {
 	return queryToJson(
 		g.DB,
 		`SELECT t.table_name, c.column_name, c.data_type, c.is_nullable
@@ -20,7 +20,7 @@ func (g *AdminGateway) GetAll() ([]byte, error) {
 	)
 }
 
-func (g *AdminGateway) Create(table Table) (err error) {
+func (g *AdminStorage) Create(table Table) (err error) {
 	columnsSchema := generateColumnsSchema(table.Columns)
 
 	_, err = g.DB.Exec(
@@ -30,7 +30,7 @@ func (g *AdminGateway) Create(table Table) (err error) {
 	return err
 }
 
-func (g *AdminGateway) HasTable(tableName string) (hasTable bool, err error) {
+func (g *AdminStorage) HasTable(tableName string) (hasTable bool, err error) {
 	err = g.DB.QueryRow(`SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)`, tableName).Scan(&hasTable)
 
 	return hasTable, err

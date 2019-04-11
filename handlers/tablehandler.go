@@ -7,7 +7,7 @@ import (
 
 type TableHandler struct {
 	Response     http.ResponseWriter
-	TableGateway storage.TableGateway
+	TableStorage storage.TableStorage
 	Request      *http.Request
 }
 
@@ -26,7 +26,7 @@ func (h *TableHandler) Create() {
 		return
 	}
 
-	err = h.TableGateway.Create(payload)
+	err = h.TableStorage.Create(payload)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -42,7 +42,7 @@ func (h *TableHandler) Update(ID int) {
 		return
 	}
 
-	err = h.TableGateway.Update(ID, payload)
+	err = h.TableStorage.Update(ID, payload)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -57,7 +57,7 @@ func (h *TableHandler) Delete(ID int) {
 		return
 	}
 
-	err := h.TableGateway.Delete(ID)
+	err := h.TableStorage.Delete(ID)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -67,7 +67,7 @@ func (h *TableHandler) Delete(ID int) {
 }
 
 func (h *TableHandler) getByID(ID int) {
-	data, err := h.TableGateway.GetByID(ID)
+	data, err := h.TableStorage.GetByID(ID)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())
@@ -77,7 +77,7 @@ func (h *TableHandler) getByID(ID int) {
 }
 
 func (h *TableHandler) getAll() {
-	data, err := h.TableGateway.GetAll()
+	data, err := h.TableStorage.GetAll()
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())

@@ -23,25 +23,25 @@ func main() {
 }
 
 func tableHandler(w http.ResponseWriter, r *http.Request) {
-	adminGateway := storage.AdminGateway{DB: db}
+	adminStorage := storage.AdminStorage{DB: db}
 	middleware := handlers.Middleware{
 		Request:      r,
 		Response:     w,
-		AdminGateway: adminGateway,
+		AdminStorage: adminStorage,
 	}
 	tableName, ID, invalid := middleware.Route()
 	if invalid {
 		return
 	}
 
-	tableGateway := storage.TableGateway{
+	tableStorage := storage.TableStorage{
 		DB:    db,
 		Table: tableName,
 	}
 	handler := handlers.TableHandler{
 		Request:      r,
 		Response:     w,
-		TableGateway: tableGateway,
+		TableStorage: tableStorage,
 	}
 
 	if r.Method == "GET" {
@@ -77,11 +77,11 @@ POST
 }
 */
 func adminHandler(w http.ResponseWriter, r *http.Request) {
-	adminGateway := storage.AdminGateway{DB: db}
+	adminStorage := storage.AdminStorage{DB: db}
 	handler := handlers.AdminHandler{
 		Request:      r,
 		Response:     w,
-		AdminGateway: adminGateway,
+		AdminStorage: adminStorage,
 	}
 
 	if r.Method == "GET" {

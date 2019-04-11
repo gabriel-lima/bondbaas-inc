@@ -1,9 +1,9 @@
 package storage
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
-	"fmt"
 )
 
 func TestGenerateInsertQuery(t *testing.T) {

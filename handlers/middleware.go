@@ -11,7 +11,7 @@ import (
 type Middleware struct {
 	Request      *http.Request
 	Response     http.ResponseWriter
-	AdminGateway storage.AdminGateway
+	AdminStorage storage.AdminStorage
 }
 
 func (m *Middleware) Route() (string, int, bool) {
@@ -64,7 +64,7 @@ func (m *Middleware) tableNameIsAReservedWord(tableName string) bool {
 }
 
 func (m *Middleware) tableNameNotFound(tableName string) bool {
-	hasTable, err := m.AdminGateway.HasTable(tableName)
+	hasTable, err := m.AdminStorage.HasTable(tableName)
 	if err != nil {
 		fail(m.Response, 500, err.Error())
 		return true

@@ -72,7 +72,7 @@ func GenerateUpdateValues(ID int, payload map[string]interface{}) (values []inte
 	return values
 }
 
-func orderByColumn(payload map[string]interface{}) (keys []string){
+func orderByColumn(payload map[string]interface{}) (keys []string) {
 	for k := range payload {
 		keys = append(keys, k)
 	}

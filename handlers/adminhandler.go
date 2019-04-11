@@ -7,12 +7,12 @@ import (
 
 type AdminHandler struct {
 	Response     http.ResponseWriter
-	AdminGateway storage.AdminGateway
+	AdminStorage storage.AdminStorage
 	Request      *http.Request
 }
 
 func (h *AdminHandler) Get() {
-	data, err := h.AdminGateway.GetAll()
+	data, err := h.AdminStorage.GetAll()
 
 	if err != nil {
 		fail(h.Response, 500, err.Error())
@@ -28,7 +28,7 @@ func (h *AdminHandler) Create() {
 		return
 	}
 
-	err = h.AdminGateway.Create(payload)
+	err = h.AdminStorage.Create(payload)
 
 	if err != nil {
 		fail(h.Response, 422, err.Error())
