@@ -64,7 +64,7 @@ func tableHandler(w http.ResponseWriter, r *http.Request) {
 /// Create a table schema
 /*
 POST
-/tables
+/admin/tables
 {
 	"name": "products",
 	"columns": [
