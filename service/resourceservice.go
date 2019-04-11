@@ -7,7 +7,7 @@ import (
 
 type ResourceService struct {
 	ResourceStorage   storage.ResourceStorage
-	ResourcePresenter presenter.ResourcePresenter
+	ResourcePresenter presenter.GenericPresenter
 }
 
 func (s *ResourceService) Get(ID int) {

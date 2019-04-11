@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bondbaas/model"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -20,7 +21,7 @@ func (g *AdminStorage) GetAll() ([]byte, error) {
 	)
 }
 
-func (g *AdminStorage) Create(table Table) (err error) {
+func (g *AdminStorage) Create(table model.TableModel) (err error) {
 	columnsSchema := generateColumnsSchema(table.Columns)
 
 	_, err = g.DB.Exec(
@@ -36,7 +37,7 @@ func (g *AdminStorage) HasTable(tableName string) (hasTable bool, err error) {
 	return hasTable, err
 }
 
-func generateColumnsSchema(columns []Column) (columnsSchema string) {
+func generateColumnsSchema(columns []model.Column) (columnsSchema string) {
 	for _, c := range columns {
 		// ID field is always create in a table, so avoiding duplicated field
 		if strings.ToLower(c.Name) == "id" {

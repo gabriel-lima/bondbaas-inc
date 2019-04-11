@@ -2,6 +2,7 @@ package main
 
 import (
 	"bondbaas/handlers"
+	"bondbaas/model"
 	"bondbaas/presenter"
 	"bondbaas/service"
 	"bondbaas/storage"
@@ -35,6 +36,12 @@ func getPayload(request *http.Request) (payload map[string]interface{}, err erro
 	return payload, err
 }
 
+func getPayloadSchema(request *http.Request) (model.TableModel, error) {
+	table := model.TableModel{}
+	err := json.NewDecoder(request.Body).Decode(&table)
+	return table, err
+}
+
 func tableHaResource(w http.ResponseWriter, r *http.Request) {
 	adminStorage := storage.AdminStorage{DB: db}
 	middleware := handlers.Middleware{
@@ -51,12 +58,12 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 		DB:        db,
 		TableName: tableName,
 	}
-	resourcePresenter := presenter.ResourcePresenter{
+	genericPresenter := presenter.GenericPresenter{
 		Response: w,
 	}
 	handler := service.ResourceService{
 		ResourceStorage:   resourceStorage,
-		ResourcePresenter: resourcePresenter,
+		ResourcePresenter: genericPresenter,
 	}
 
 	if r.Method == "GET" {
@@ -104,18 +111,28 @@ POST
 }
 */
 func adminHandler(w http.ResponseWriter, r *http.Request) {
-	adminStorage := storage.AdminStorage{DB: db}
-	handler := handlers.AdminHandler{
-		Request:      r,
-		Response:     w,
-		AdminStorage: adminStorage,
+	adminStorage := storage.AdminStorage{
+		DB: db,
+	}
+	adminPresenter := presenter.GenericPresenter{
+		Response: w,
+	}
+	adminService := service.AdminService{
+		AdminStorage:   adminStorage,
+		AdminPresenter: adminPresenter,
 	}
 
 	if r.Method == "GET" {
-		handler.Get()
+		adminService.Get()
 	}
 
 	if r.Method == "POST" {
-		handler.Create()
+		payload, err := getPayloadSchema(r)
+		if err != nil {
+			// fail(h.Response, 422, err.Error())
+			return
+		}
+
+		adminService.Create(payload)
 	}
 }
