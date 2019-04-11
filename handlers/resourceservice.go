@@ -11,77 +11,77 @@ type ResourceService struct {
 	Request         *http.Request
 }
 
-func (h *ResourceService) Get(ID int) {
+func (s *ResourceService) Get(ID int) {
 	if ID > 0 {
-		h.getByID(ID)
+		s.getByID(ID)
 	} else {
-		h.getAll()
+		s.getAll()
 	}
 }
 
-func (h *ResourceService) Create() {
-	payload, err := getPayload(h.Request)
+func (s *ResourceService) Create() {
+	payload, err := getPayload(s.Request)
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 		return
 	}
 
-	err = h.ResourceStorage.Create(payload)
+	err = s.ResourceStorage.Create(payload)
 
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 	} else {
-		success(h.Response, 201, nil)
+		success(s.Response, 201, nil)
 	}
 }
 
-func (h *ResourceService) Update(ID int) {
-	payload, err := getPayload(h.Request)
+func (s *ResourceService) Update(ID int) {
+	payload, err := getPayload(s.Request)
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 		return
 	}
 
-	err = h.ResourceStorage.Update(ID, payload)
+	err = s.ResourceStorage.Update(ID, payload)
 
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 	} else {
-		success(h.Response, 200, nil)
+		success(s.Response, 200, nil)
 	}
 }
 
-func (h *ResourceService) Delete(ID int) {
+func (s *ResourceService) Delete(ID int) {
 	if ID == 0 {
-		fail(h.Response, 422, "Id must to be an integer")
+		fail(s.Response, 422, "Id must to be an integer")
 		return
 	}
 
-	err := h.ResourceStorage.Delete(ID)
+	err := s.ResourceStorage.Delete(ID)
 
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 	} else {
-		success(h.Response, 200, nil)
+		success(s.Response, 200, nil)
 	}
 }
 
-func (h *ResourceService) getByID(ID int) {
-	data, err := h.ResourceStorage.GetByID(ID)
+func (s *ResourceService) getByID(ID int) {
+	data, err := s.ResourceStorage.GetByID(ID)
 
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 	} else {
-		success(h.Response, 200, data)
+		success(s.Response, 200, data)
 	}
 }
 
-func (h *ResourceService) getAll() {
-	data, err := h.ResourceStorage.GetAll()
+func (s *ResourceService) getAll() {
+	data, err := s.ResourceStorage.GetAll()
 
 	if err != nil {
-		fail(h.Response, 422, err.Error())
+		fail(s.Response, 422, err.Error())
 	} else {
-		success(h.Response, 200, data)
+		success(s.Response, 200, data)
 	}
 }
