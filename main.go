@@ -51,8 +51,8 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 		AdminStorage:      adminStorage,
 		ResourcePresenter: resourcePresenter,
 	}
-	tableName, ID, invalid := resourceRouter.Route(r.URL.Path)
-	if invalid {
+	tableName, ID, invalidRoute := resourceRouter.Route(r.URL.Path)
+	if invalidRoute {
 		return
 	}
 
