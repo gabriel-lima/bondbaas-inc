@@ -3,12 +3,16 @@ package main
 import (
 	"bondbaas/handlers"
 	"bondbaas/storage"
+	"bondbaas/service"
+	"bondbaas/presenter"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"log"
 	"net/http"
 	"os"
+	"encoding/json"
+	"io/ioutil"
 )
 
 var db *sql.DB
@@ -20,6 +24,15 @@ func main() {
 	http.HandleFunc("/", tableHaResource)
 	http.HandleFunc("/admin/tables", adminHandler)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", os.Getenv("APP_PORT")), nil))
+}
+
+func getPayload(request *http.Request) (payload map[string]interface{}, err error) {
+	var raw []byte
+	raw, _ = ioutil.ReadAll(request.Body)
+
+	err = json.Unmarshal([]byte(raw), &payload)
+
+	return payload, err
 }
 
 func tableHaResource(w http.ResponseWriter, r *http.Request) {
@@ -34,14 +47,16 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ResourceStorage := storage.ResourceStorage{
+	resourceStorage := storage.ResourceStorage{
 		DB:        db,
 		TableName: tableName,
 	}
-	handler := handlers.ResourceService{
-		Request:         r,
-		Response:        w,
-		ResourceStorage: ResourceStorage,
+	resourcePresenter := presenter.ResourcePresenter {
+		Response: w,
+	}
+	handler := service.ResourceService{
+		ResourceStorage: resourceStorage,
+		ResourcePresenter: resourcePresenter,
 	}
 
 	if r.Method == "GET" {
@@ -49,11 +64,23 @@ func tableHaResource(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		handler.Create()
+		payload, err := getPayload(r)
+		if err != nil {
+			// s.ResourcePresenter.Fail(422, err.Error())
+			return
+		}
+
+		handler.Create(payload)
 	}
 
 	if r.Method == "PUT" {
-		handler.Update(ID)
+		payload, err := getPayload(r)
+		if err != nil {
+			// s.ResourcePresenter.Fail(422, err.Error())
+			return
+		}
+
+		handler.Update(ID, payload)
 	}
 
 	if r.Method == "DELETE" {
