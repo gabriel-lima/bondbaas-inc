@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -38,7 +37,7 @@ func TestGenerateInsertQuery(t *testing.T) {
 }
 
 func TestGenerateInsertValues(t *testing.T) {
-	var testCases = []struct {
+	var tests = []struct {
 		payload  map[string]interface{}
 		expected []interface{}
 	}{
@@ -56,12 +55,10 @@ func TestGenerateInsertValues(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(fmt.Sprintf("%v", tc.payload), func(t *testing.T) {
-			if output := GenerateInsertValues(tc.payload); !reflect.DeepEqual(output, tc.expected) {
-				t.Errorf("Test Failed:\nExpected: %v\nReceived: %v", tc.expected, output)
-			}
-		})
+	for _, test := range tests {
+		if output := GenerateInsertValues(test.payload); !reflect.DeepEqual(output, test.expected) {
+			t.Errorf("Test Failed:\nExpected: %v\nReceived: %v", test.expected, output)
+		}
 	}
 }
 
