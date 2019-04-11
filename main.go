@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bondbaas/handlers"
 	"bondbaas/model"
 	"bondbaas/presenter"
+	"bondbaas/router"
 	"bondbaas/service"
 	"bondbaas/storage"
 	"database/sql"
@@ -44,12 +44,14 @@ func getPayloadSchema(request *http.Request) (model.TableModel, error) {
 
 func tableHaResource(w http.ResponseWriter, r *http.Request) {
 	adminStorage := storage.AdminStorage{DB: db}
-	middleware := handlers.Middleware{
-		Request:      r,
-		Response:     w,
-		AdminStorage: adminStorage,
+	resourcePresenter := presenter.GenericPresenter{
+		Response: w,
 	}
-	tableName, ID, invalid := middleware.Route()
+	resourceRouter := router.ResourceRouter{
+		AdminStorage:      adminStorage,
+		ResourcePresenter: resourcePresenter,
+	}
+	tableName, ID, invalid := resourceRouter.Route(r.URL.Path)
 	if invalid {
 		return
 	}
