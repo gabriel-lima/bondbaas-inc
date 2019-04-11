@@ -34,14 +34,14 @@ func tableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tableStorage := storage.TableStorage{
+	ResourceStorage := storage.ResourceStorage{
 		DB:    db,
 		Table: tableName,
 	}
 	handler := handlers.TableHandler{
-		Request:      r,
-		Response:     w,
-		TableStorage: tableStorage,
+		Request:         r,
+		Response:        w,
+		ResourceStorage: ResourceStorage,
 	}
 
 	if r.Method == "GET" {
